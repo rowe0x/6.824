@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"mapreduce"
 	"os"
+	"strconv"
+	"strings"
+	"unicode"
 )
 
 //
@@ -13,8 +16,19 @@ import (
 // and look only at the contents argument. The return value is a slice
 // of key/value pairs.
 //
-func mapF(filename string, contents string) []mapreduce.KeyValue {
-	// TODO: you have to write this function
+func mapF(_ string, contents string) []mapreduce.KeyValue {
+	freq := make(map[string]int64)
+	f := func(c rune) bool {
+		return !unicode.IsLetter(c)
+	}
+	for _, s := range strings.FieldsFunc(contents, f) {
+		freq[s]++
+	}
+	keyValues := make([]mapreduce.KeyValue, 0)
+	for k, v := range freq {
+		keyValues = append(keyValues, mapreduce.KeyValue{k, strconv.FormatInt(v, 10)})
+	}
+	return keyValues
 }
 
 //
@@ -22,8 +36,14 @@ func mapF(filename string, contents string) []mapreduce.KeyValue {
 // map tasks, with a list of all the values created for that key by
 // any map task.
 //
-func reduceF(key string, values []string) string {
-	// TODO: you also have to write this function
+func reduceF(_ string, values []string) string {
+	var res int64
+	for _, v := range values {
+		if s, err := strconv.ParseInt(v, 10, 64); err == nil {
+			res += s
+		}
+	}
+	return strconv.FormatInt(res, 10)
 }
 
 // Can be run in 3 ways:

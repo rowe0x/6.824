@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"sort"
 )
 
 // doReduce manages one reduce task: it reads the intermediate
@@ -65,9 +66,8 @@ func doReduce(
 	}
 	defer w.Close()
 	enc := json.NewEncoder(w)
-
+	m := make(map[string][]string)
 	for i := 0; i < nMap; i++ {
-		m := make(map[string][]string)
 		scanner := bufio.NewScanner(rds[i])
 		for scanner.Scan() {
 			var keyValue KeyValue
@@ -80,8 +80,13 @@ func doReduce(
 		if err != nil {
 			panic(err)
 		}
-		for k, v := range m {
-			enc.Encode(KeyValue{k, reduceF(k, v)})
-		}
+	}
+	keys := make([]string, 0)
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		enc.Encode(KeyValue{k, reduceF(k, m[k])})
 	}
 }
